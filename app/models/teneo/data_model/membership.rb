@@ -9,7 +9,8 @@ module Teneo::DataModel
 
     belongs_to :user
     belongs_to :organization
-    belongs_to :role
+
+    enum role: {admin: 'admin', uploader: 'uploader', ingester: 'ingester'}
 
     def self.from_hash(hash)
       super(hash, []) do |item, h|
@@ -22,11 +23,6 @@ module Teneo::DataModel
         _organization = Organization.find_by(name: organization_name)
         puts "Could not find organization '#{organization_name}'" unless _organization
         item.organization = _organization
-
-        role_code = h.delete(:role)
-        _role = Role.find_by(code: role_code)
-        puts "Could not find role '#{role_code}'" unless _role
-        item.role = _role
       end
     end
 

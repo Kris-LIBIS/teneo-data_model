@@ -12,7 +12,6 @@ module Teneo::DataModel
     belongs_to :material_flow
 
     has_many :memberships, dependent: :destroy
-    has_many :roles, through: :memberships
     has_many :users, through: :memberships
 
     accepts_nested_attributes_for :memberships, allow_destroy: true

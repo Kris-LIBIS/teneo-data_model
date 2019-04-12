@@ -24,7 +24,6 @@ module Teneo::DataModel
     validates_format_of :email, with: URI::MailTo::EMAIL_REGEXP
 
     has_many :memberships, dependent: :destroy
-    has_many :roles, through: :memberships
     has_many :organizations, through: :memberships
 
     accepts_nested_attributes_for :memberships, allow_destroy: true
@@ -50,41 +49,39 @@ module Teneo::DataModel
     # end
 
     # @param [Organization] organization
-    # @return [Array<Role>]
+    # @return [Array<String>]
     def roles_for(organization)
       self.memberships.where(organization: organization).map(&:role) rescue []
     end
 
-    # @param [Role] role
+    # @param [String] role
     # @return [Array<Organization>]
     def organizations_for(role)
       self.memberships.where(role: role).map(&:organization) rescue []
     end
 
-    # @param [Role] role
+    # @param [String] role
     # @param [Organization] organization
     # @return [boolean]
     def is_authorized?(role, organization)
-      role = Role.find_by(code: role) if role.is_a?(String)
-      return false unless role
       self.roles_for(organization).include?(role)
     end
 
-    # @param [Role] role
+    # @param [String] role
     # @param [Organization] organization
     # @return [Membership]
     def add_role(role, organization)
       self.memberships.build(organization: organization, role: role)
     end
 
-    # @param [Role] role
+    # @param [String] role
     # @param [Organization] organization
     def del_role(role, organization)
       m = self.memberships.find_by(organization: organization, role: role)
       m&.destroy!
     end
 
-    # @return [Hash<Organization, Role>]
+    # @return [Hash<Organization, Array<String>>]
     def member_organizations
       self.memberships.reduce({}) {|h, m| h[m.organization] = ((h[m.organization] ||= []) << m.role); h}
     end
@@ -108,12 +105,10 @@ module Teneo::DataModel
         if (roles = h.delete(:roles))
           roles.each do |role|
             role_code = role[:role]
-            r = Role.find_by(code: role_code)
-            puts "Could not find role '#{role_code}'" unless r
             organization_name = role[:organization]
-            g = Organization.find_by(name: organization_name)
-            puts "Could not find organization '#{organization_name}'" unless g
-            item.add_role(r, g)
+            org = Organization.find_by(name: organization_name)
+            puts "Could not find organization '#{organization_name}'" unless org
+            item.add_role(role_code, org)
           end
         end
       end
